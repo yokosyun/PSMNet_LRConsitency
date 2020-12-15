@@ -48,11 +48,46 @@ class PSMNet(nn.Module):
         dilation = 1
         pad = 1
 
-        self.bottom_1 = nn.Sequential(
-            nn.Conv2d(in_channels*4, in_channels*4, kernel_size=3, stride=1, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
-            nn.BatchNorm2d(in_channels*4),
+        self.bottom_11 = nn.Sequential(
+            nn.Conv2d(in_channels*4, in_channels, kernel_size=3, stride=1, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
+            nn.BatchNorm2d(in_channels),
             nn.ReLU(inplace=True),
         )
+
+        dilation = 3
+
+        self.bottom_12 = nn.Sequential(
+            nn.Conv2d(in_channels*4, in_channels, kernel_size=3, stride=1, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
+            nn.BatchNorm2d(in_channels),
+            nn.ReLU(inplace=True),
+        )
+
+        dilation = 5
+
+        self.bottom_13 = nn.Sequential(
+            nn.Conv2d(in_channels*4, in_channels, kernel_size=3, stride=1, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
+            nn.BatchNorm2d(in_channels),
+            nn.ReLU(inplace=True),
+        )
+
+        dilation = 7
+
+        self.bottom_14 = nn.Sequential(
+            nn.Conv2d(in_channels*4, in_channels, kernel_size=3, stride=1, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
+            nn.BatchNorm2d(in_channels),
+            nn.ReLU(inplace=True),
+        )
+
+
+        self.bottom_fuse = nn.Sequential(
+            nn.Conv2d(in_channels*8, in_channels*4, kernel_size=3, padding=1),
+            nn.BatchNorm2d(in_channels*4),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels*4, in_channels*4, kernel_size=1, padding=0),
+            nn.BatchNorm2d(in_channels*4)
+        )
+
+
 
         self.up2 = nn.Sequential(
             nn.Conv2d(in_channels*8, in_channels*4, kernel_size=3, padding=1),
@@ -80,29 +115,24 @@ class PSMNet(nn.Module):
 
 
     def estimate_disparity(self, cost, height, width):
-
-        print(cost.shape)
-    
+   
         down1 = self.down1(cost)
-
-        print(down1.shape)
-        
         down2 = self.maxpool(down1)
-        print(down2.shape)
         down2 = self.down2(down2)
-        print("down2.shape=",down2.shape)
-
         bottom_1 = self.maxpool(down2)
-        print(bottom_1.shape)
-        bottom_1 = self.bottom_1(bottom_1)
-        print("bottom_1.shape=",bottom_1.shape)
+    
+        bottom_11 = self.bottom_11(bottom_1)
+        bottom_12 = self.bottom_12(bottom_1)
+        bottom_13 = self.bottom_13(bottom_1)
+        bottom_14 = self.bottom_14(bottom_1)
 
+        bottom_out = torch.cat([bottom_1 ,bottom_11, bottom_12,bottom_13,bottom_14], axis=1)
+        bottom_out = self.bottom_fuse(bottom_out)
+       
 
-
-        up2 = F.interpolate(bottom_1, size=None, scale_factor=2, mode='bilinear', align_corners=None)
+        up2 = F.interpolate(bottom_out, size=None, scale_factor=2, mode='bilinear', align_corners=None)
         up2 = torch.cat([up2, down2], axis=1)
         up2 = self.up2(up2)
-
     
         up1 = F.interpolate(up2, size=None, scale_factor=2, mode='bilinear', align_corners=None)
         up1 = torch.cat([up1, down1], axis=1)

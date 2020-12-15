@@ -141,19 +141,16 @@ def train(imgL,imgR, disp_L):
         elif args.model == 'concatNet':
             disp_left, disp_right = model(imgL,imgR)
 
-            print("disp_left",disp_left.shape)
-
             
-            # loss = F.smooth_l1_loss(disp_left[mask], disp_true[mask], size_average=True)
+            gt_loss = F.smooth_l1_loss(disp_left[mask], disp_true[mask], size_average=True)
 
             disp_left = torch.unsqueeze(disp_left,0)
             disp_right = torch.unsqueeze(disp_right,0)
-            print("disp_left",disp_left.shape)
             
             REC_loss,  disp_smooth_loss, lr_loss = criterion(disp_left,disp_right,imgL,imgR)
 
 
-            loss =  REC_loss + disp_smooth_loss + lr_loss 
+            loss =  REC_loss  + lr_loss + gt_loss
             # save_image(disp_left/torch.max(disp_left), 'disp_left.png')
             # save_image(disp_right/torch.max(disp_right), 'disp_right.png')
         loss.backward()
@@ -241,7 +238,7 @@ def main():
 
 
         #SAVE
-        savefilename = args.savemodel+'/checkpoint_'+str(epoch)+'.tar'
+        savefilename = args.savemodel+'/' + args.model +str(epoch)+'.tar'
         torch.save({
 		    'epoch': epoch,
 		    'state_dict': model.state_dict(),
