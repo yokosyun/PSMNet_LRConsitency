@@ -57,10 +57,7 @@ class LRLoss(nn.Module):
             save_image(disp_right/torch.max(disp_right), 'disp_right.png')
             save_image(disp_left/torch.max(disp_left), 'disp_left.png')
 
-        print("REC_loss=",REC_loss)
-        print("disp_smooth_loss=",disp_smooth_loss)
-        print("lr_loss=",lr_loss)
-
+      
         return 1 * REC_loss, 0.1 * disp_smooth_loss,  0.1 * lr_loss
 
 
@@ -321,7 +318,6 @@ class LRLoss(nn.Module):
 
         SSIM = SSIM_n / SSIM_d
 
-        print("SSIM=",SSIM)
 
         loss = torch.clamp((1 - SSIM) , 0, 2)
         if(True):

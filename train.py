@@ -17,6 +17,7 @@ from dataloader import KITTILoader as DA
 from utils.loss import *
 from models import stackhourglass as psm_net
 from models import basic as basic_net
+from models import concatNet as concatNet
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 
@@ -64,6 +65,9 @@ if args.model == 'stackhourglass':
     model = psm_net.PSMNet(args.maxdisp)
 elif args.model == 'basic':
     model = basic_net.PSMNet(args.maxdisp)
+
+elif args.model == 'concatNet':
+    model = concatNet.PSMNet()
 else:
     print('no model')
 
@@ -132,6 +136,21 @@ def train(imgL,imgR, disp_L):
 
 
             loss =  REC_loss + disp_smooth_loss + lr_loss 
+
+
+        elif args.model == 'concatNet':
+            disp_left, disp_right = model(imgL,imgR)
+
+            
+            gt_loss = F.smooth_l1_loss(disp_left[mask], disp_true[mask], size_average=True)
+
+            disp_left = torch.unsqueeze(disp_left,0)
+            disp_right = torch.unsqueeze(disp_right,0)
+            
+            REC_loss,  disp_smooth_loss, lr_loss = criterion(disp_left,disp_right,imgL,imgR)
+
+
+            loss =  REC_loss  + lr_loss + gt_loss
             # save_image(disp_left/torch.max(disp_left), 'disp_left.png')
             # save_image(disp_right/torch.max(disp_right), 'disp_right.png')
         loss.backward()
@@ -186,9 +205,9 @@ def adjust_learning_rate(optimizer, epoch):
     if epoch < 10:
         lr = 0.001
     elif epoch < 20:
-        lr = 0.0001
+        lr = 0.001
     else:
-        lr = 0.00001
+        lr = 0.001
     
     print(lr)
     for param_group in optimizer.param_groups:
@@ -219,7 +238,7 @@ def main():
 
 
         #SAVE
-        savefilename = args.savemodel+'/checkpoint_'+str(epoch)+'.tar'
+        savefilename = args.savemodel+'/' + args.model +str(epoch)+'.tar'
         torch.save({
 		    'epoch': epoch,
 		    'state_dict': model.state_dict(),
