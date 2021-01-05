@@ -16,8 +16,9 @@ Act = nn.ReLU
 
 
 class PSMNet(nn.Module):
-    def __init__(self):
+    def __init__(self, maxdisp):
         super(PSMNet, self).__init__()
+        self.maxdisp = maxdisp
         self.feature_extraction = feature_extraction()
 
         self.maxpool = nn.MaxPool2d(2)
@@ -115,6 +116,7 @@ class PSMNet(nn.Module):
 
 
     def estimate_disparity(self, cost, height, width):
+
    
         down1 = self.down1(cost)
         down2 = self.maxpool(down1)
@@ -142,7 +144,7 @@ class PSMNet(nn.Module):
 
         lr_disp = F.upsample(lr_disp, [height,width],mode='bilinear')
         lr_disp = torch.sigmoid(lr_disp)
-        lr_disp = lr_disp *width
+        lr_disp = lr_disp * self.maxdisp
         left_disp = lr_disp[:,0,:,:]
         right_disp = lr_disp[:,1,:,:]
 
@@ -153,6 +155,7 @@ class PSMNet(nn.Module):
 
         left_feature     = self.feature_extraction(left)
         right_feature  = self.feature_extraction(right)
+
 
         lr_feature = torch.cat([left_feature, right_feature], axis=1)
  

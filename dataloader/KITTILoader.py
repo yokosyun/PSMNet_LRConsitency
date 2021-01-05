@@ -7,6 +7,7 @@ import random
 from PIL import Image, ImageOps
 import numpy as np
 import preprocess 
+import torch.nn as nn
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -45,24 +46,29 @@ class myImageFloder(data.Dataset):
 
         if self.training:  
            w, h = left_img.size
-           th, tw = 256, 512
+        #    th, tw = 256, 512
+           th, tw = 368, 1232
  
-           x1 = random.randint(0, w - tw)
-           y1 = random.randint(0, h - th)
+        #    x1 = random.randint(0, w - tw)
+        #    y1 = random.randint(0, h - th)
+           
+        #org
+        #    left_img = left_img.crop((x1, y1, x1 + tw, y1 + th))
+        #    right_img = right_img.crop((x1, y1, x1 + tw, y1 + th))
 
-           left_img = left_img.crop((x1, y1, x1 + tw, y1 + th))
-           right_img = right_img.crop((x1, y1, x1 + tw, y1 + th))
+           left_img = left_img.crop((w-tw, h-th, w, h))
+           right_img = right_img.crop((w-tw, h-th, w, h))
+           
+           dataL = dataL.crop((w-tw, h-th, w, h))
 
            dataL = np.ascontiguousarray(dataL,dtype=np.float32)/256
-           dataL = dataL[y1:y1 + th, x1:x1 + tw]
-
-           processed = preprocess.get_transform(augment=False)  
-        #    left_img   = processed(left_img)
-        #    right_img  = processed(right_img)
-           left_img   = transforms.ToTensor()(left_img)
-           right_img   = transforms.ToTensor()(right_img)
+        #    dataL = dataL[y1:y1 + th, x1:x1 + tw]
            
 
+           processed = preprocess.get_transform(augment=False) 
+           left_img   = transforms.ToTensor()(left_img)
+           right_img   = transforms.ToTensor()(right_img)
+     
 
            return left_img, right_img, dataL
         else:
@@ -76,8 +82,7 @@ class myImageFloder(data.Dataset):
            dataL = np.ascontiguousarray(dataL,dtype=np.float32)/256
 
            processed = preprocess.get_transform(augment=False)  
-        #    left_img       = processed(left_img)
-        #    right_img      = processed(right_img)
+
            left_img   = transforms.ToTensor()(left_img)
            right_img   = transforms.ToTensor()(right_img)
 
