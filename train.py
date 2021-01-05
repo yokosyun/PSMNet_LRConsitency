@@ -52,11 +52,11 @@ all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_
 
 TrainImgLoader = torch.utils.data.DataLoader(
          DA.myImageFloder(all_left_img,all_right_img,all_left_disp, True), 
-         batch_size= 1, shuffle= True, num_workers= 8, drop_last=False)
+         batch_size= 2, shuffle= True, num_workers= 8, drop_last=False)
 
-TestImgLoader = torch.utils.data.DataLoader(
-         DA.myImageFloder(test_left_img,test_right_img,test_left_disp, False), 
-         batch_size= 1, shuffle= False, num_workers= 4, drop_last=False)
+# TestImgLoader = torch.utils.data.DataLoader(
+#          DA.myImageFloder(test_left_img,test_right_img,test_left_disp, False), 
+#          batch_size= 1, shuffle= False, num_workers= 4, drop_last=False)
 
 
 
@@ -67,7 +67,7 @@ elif args.model == 'basic':
     model = basic_net.PSMNet(args.maxdisp)
 
 elif args.model == 'concatNet':
-    model = concatNet.PSMNet()
+    model = concatNet.PSMNet(args.maxdisp)
 else:
     print('no model')
 
@@ -150,7 +150,7 @@ def train(imgL,imgR, disp_L):
             REC_loss,  disp_smooth_loss, lr_loss = criterion(disp_left,disp_right,imgL,imgR)
 
 
-            loss =  REC_loss  + lr_loss + gt_loss
+            loss =  REC_loss  + lr_loss + gt_loss + disp_smooth_loss
             # save_image(disp_left/torch.max(disp_left), 'disp_left.png')
             # save_image(disp_right/torch.max(disp_right), 'disp_right.png')
         loss.backward()
@@ -202,12 +202,12 @@ def test(imgL,imgR,disp_true):
 
 def adjust_learning_rate(optimizer, epoch):
     lr = 0.001
-    if epoch < 10:
+    if epoch < 100:
         lr = 0.001
-    elif epoch < 20:
-        lr = 0.001
+    elif epoch < 200:
+        lr = 0.0005
     else:
-        lr = 0.001
+        lr = 0.0001
     
     print(lr)
     for param_group in optimizer.param_groups:
@@ -221,10 +221,13 @@ def main():
         print('This is %d-th epoch' %(epoch))
         total_train_loss = 0
         adjust_learning_rate(optimizer,epoch)
+        # if epoch <160:
+        #     continue
 
 
         ## training ##
         for batch_idx, (imgL_crop, imgR_crop, disp_crop_L) in enumerate(TrainImgLoader):
+
 
             start_time = time.time()
             loss = train(imgL_crop,imgR_crop, disp_crop_L)
@@ -248,21 +251,20 @@ def main():
 
 
         #------------- TEST ------------------------------------------------------------
-        total_test_loss = 0
-        for batch_idx, (imgL, imgR, disp_L) in enumerate(TestImgLoader):
-            test_loss = test(imgL,imgR, disp_L)
-            print('Iter %d test loss = %.3f' %(batch_idx, test_loss))
-            total_test_loss += test_loss
-            writer_test.add_scalar(
-                    "total", test_loss, iteration)
+        # total_test_loss = 0
+        # for batch_idx, (imgL, imgR, disp_L) in enumerate(TestImgLoader):
+        #     test_loss = test(imgL,imgR, disp_L)
+        #     print('Iter %d test loss = %.3f' %(batch_idx, test_loss))
+        #     total_test_loss += test_loss
+        #     writer_test.add_scalar(
+        #             "total", test_loss, iteration)
 
-        print('total test loss = %.3f' %(total_test_loss/len(TestImgLoader)))
-        #----------------------------------------------------------------------------------
+        # print('total test loss = %.3f' %(total_test_loss/len(TestImgLoader)))
         #SAVE test information
-        savefilename = args.savemodel+'testinformation.tar'
-        torch.save({
-                'test_loss': total_test_loss/len(TestImgLoader),
-            }, savefilename)
+        # savefilename = args.savemodel+'testinformation.tar'
+        # torch.save({
+        #         'test_loss': total_test_loss/len(TestImgLoader),
+        #     }, savefilename)
 
     writer_train.close()
     writer_test.close()

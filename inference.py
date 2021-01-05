@@ -11,8 +11,11 @@ import time
 import math
 from models import stackhourglass as psm_net
 from models import basic as basic_net
+from models import concatNet as concatNet
 from PIL import Image
 from torchvision.utils import save_image
+
+
 
 
 parser = argparse.ArgumentParser(description='PSMNet')
@@ -40,6 +43,15 @@ else:
 test_left_img, test_right_img = DA.dataloader(args.datapath)
 
 
+from dataloader import KITTIloader2015 as lt
+from dataloader import KITTILoader as DA_tmp
+all_left_img, all_right_img, all_left_disp, test_left_img_tmp, test_right_img_tmp, test_left_disp = lt.dataloader(args.datapath)
+
+TrainImgLoader = torch.utils.data.DataLoader(
+         DA_tmp.myImageFloder(all_left_img,all_right_img,all_left_disp, True), 
+         batch_size= 1, shuffle= True, num_workers= 8, drop_last=False)
+
+
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 torch.manual_seed(args.seed)
@@ -50,6 +62,8 @@ if args.model == 'stackhourglass':
     model = psm_net.PSMNet(args.maxdisp)
 elif args.model == 'basic':
     model = basic_net.PSMNet(args.maxdisp)
+elif args.model == 'concatNet':
+    model = concatNet.PSMNet(args.maxdisp)
 else:
     print('no model')
 
@@ -72,7 +86,9 @@ def test(imgL,imgR):
     
 
         with torch.no_grad():
+            start_time = time.time()
             disp, disp_right= model(imgL,imgR)
+            print('time = %.2f' %(time.time() - start_time))
 
         #save image
         #save_image(disp/torch.max(disp), 'disp.png')
@@ -84,20 +100,15 @@ def test(imgL,imgR):
 
 
 def main():
-
-        normal_mean_var = {'mean': [0.485, 0.456, 0.406],
-                            'std': [0.229, 0.224, 0.225]}
-        infer_transform = transforms.Compose([transforms.ToTensor(),
-                                              transforms.Normalize(**normal_mean_var)])    
     
         for inx in range(len(test_left_img)):
 
             imgL_o = Image.open(test_left_img[inx]).convert('RGB')
             imgR_o = Image.open(test_right_img[inx]).convert('RGB')
             
+            imgL = transforms.ToTensor()(imgL_o)
+            imgR = transforms.ToTensor()(imgR_o)
 
-            imgL = infer_transform(imgL_o)
-            imgR = infer_transform(imgR_o) 
         
 
             # pad to width and hight to 16 times
@@ -116,9 +127,9 @@ def main():
             imgL = F.pad(imgL,(0,right_pad, top_pad,0)).unsqueeze(0)
             imgR = F.pad(imgR,(0,right_pad, top_pad,0)).unsqueeze(0)
 
-            start_time = time.time()
+            # start_time = time.time()
             pred_disp , disp_right = test(imgL,imgR)
-            print('time = %.2f' %(time.time() - start_time))
+            # print('time = %.2f' %(time.time() - start_time))
 
             
             if top_pad !=0 or right_pad != 0:
@@ -131,6 +142,10 @@ def main():
             img = (img*256).astype('uint16')
             img = Image.fromarray(img)
             img.save("result/"+test_left_img[inx].split('/')[-1])
+
+            imgL_o.save("result/tmp.png")
+
+            save_image(imgL,"result/tensor.png")
 
 
 if __name__ == '__main__':

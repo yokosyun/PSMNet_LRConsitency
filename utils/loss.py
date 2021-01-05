@@ -37,8 +37,11 @@ class LRLoss(nn.Module):
         REC_loss = rec_loss_left + rec_loss_right
 
         # 2. Depth SMOOTHNESS loss
-        left_disp_smooth = self.DepthSmoothness(disp_left, left)
-        right_disp_smooth = self.DepthSmoothness(disp_right, right)
+        # left_disp_smooth = self.DepthSmoothness(disp_left, left)
+        # right_disp_smooth = self.DepthSmoothness(disp_right, right)
+        left_disp_smooth = self.DisparitySmoothness(disp_left, left)
+        right_disp_smooth = self.DisparitySmoothness(disp_right, right)
+
         disp_smooth_loss = left_disp_smooth + right_disp_smooth
 
         # 3. LR CONSISTENCY loss
