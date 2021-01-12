@@ -52,7 +52,7 @@ all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_
 
 TrainImgLoader = torch.utils.data.DataLoader(
          DA.myImageFloder(all_left_img,all_right_img,all_left_disp, True), 
-         batch_size= 2, shuffle= True, num_workers= 8, drop_last=False)
+         batch_size= 1, shuffle= True, num_workers= 8, drop_last=False)
 
 # TestImgLoader = torch.utils.data.DataLoader(
 #          DA.myImageFloder(test_left_img,test_right_img,test_left_disp, False), 
@@ -221,7 +221,7 @@ def main():
         print('This is %d-th epoch' %(epoch))
         total_train_loss = 0
         adjust_learning_rate(optimizer,epoch)
-        # if epoch <160:
+        # if epoch <100:
         #     continue
 
 

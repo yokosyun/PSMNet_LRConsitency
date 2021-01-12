@@ -15,16 +15,45 @@ Act = nn.ReLU
 # Act = SwishAuto
 # Act = MishAuto
 
+# Norm = nn.BatchNorm2d
+Norm = nn.InstanceNorm2d
+#Norm = nn.GroupNorm
+
+groups = 16
+
+
+class DomainNorm(nn.Module):
+    def __init__(self, channel, l2=True):
+        super(DomainNorm, self).__init__()
+        self.normalize = Norm(num_features=channel, affine=False)
+        self.l2 = l2
+        # self.weight = nn.Parameter(torch.ones(1,channel,1,1))
+        # self.bias = nn.Parameter(torch.zeros(1,channel,1,1))
+        # self.weight.requires_grad = True
+        # self.bias.requires_grad = True
+    def forward(self, x):
+        x = self.normalize(x)
+        if self.l2:
+            return F.normalize(x, p=2, dim=1)
+        # return x * self.weight + self.bias
+
+
+
+
 def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
 
+
     return nn.Sequential(nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
-                         nn.BatchNorm2d(out_planes))
+                        # Norm(out_planes)
+                        #Norm(groups,out_planes,affine=False)
+                        DomainNorm(channel=out_planes, l2=True)
+)
 
 
-def convbn_3d(in_planes, out_planes, kernel_size, stride, pad):
+# def convbn_3d(in_planes, out_planes, kernel_size, stride, pad):
 
-    return nn.Sequential(nn.Conv3d(in_planes, out_planes, kernel_size=kernel_size, padding=pad, stride=stride,bias=False),
-                         nn.BatchNorm3d(out_planes))
+#     return nn.Sequential(nn.Conv3d(in_planes, out_planes, kernel_size=kernel_size, padding=pad, stride=stride,bias=False),
+#                          nn.BatchNorm3d(out_planes))
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -113,7 +142,10 @@ class feature_extraction(nn.Module):
            downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),)
+                Norm(planes * block.expansion),
+                #Norm(groups,planes * block.expansion,affine=False),
+                # DomainNorm(planes * block.expansion, l2=True),
+)
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample, pad, dilation))

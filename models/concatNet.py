@@ -14,6 +14,10 @@ Act = nn.ReLU
 # Act = SwishAuto
 # Act = MishAuto
 
+# Norm = nn.BatchNorm2d
+Norm = nn.InstanceNorm2d
+# Norm = nn.GroupNorm
+group = 16
 
 class PSMNet(nn.Module):
     def __init__(self, maxdisp):
@@ -25,24 +29,27 @@ class PSMNet(nn.Module):
 
 
         in_channels = 64
-
         
 
         self.down1 = nn.Sequential(
             nn.Conv2d(in_channels, in_channels*2, kernel_size=3, padding=1),
-            nn.BatchNorm2d(in_channels*2),
+            Norm(in_channels*2),
+            # Norm(group,in_channels*2),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels*2, in_channels*2, kernel_size=3, padding=1),
-            nn.BatchNorm2d(in_channels*2),
+            Norm(in_channels*2),
+            # Norm(group,in_channels*2),
             nn.ReLU(inplace=True)
         )
         
         self.down2 = nn.Sequential(
             nn.Conv2d(in_channels*2, in_channels*4, kernel_size=3, padding=1),
-            nn.BatchNorm2d(in_channels*4),
+            Norm(in_channels*4),
+            # Norm(group,in_channels*4),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels*4, in_channels*4, kernel_size=3, padding=1),
-            nn.BatchNorm2d(in_channels*4),
+            Norm(in_channels*4),
+            # Norm(group,in_channels*4),
             nn.ReLU(inplace=True)
         )
 
@@ -51,7 +58,8 @@ class PSMNet(nn.Module):
 
         self.bottom_11 = nn.Sequential(
             nn.Conv2d(in_channels*4, in_channels, kernel_size=3, stride=1, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
-            nn.BatchNorm2d(in_channels),
+            Norm(in_channels),
+            # Norm(group,in_channels),
             nn.ReLU(inplace=True),
         )
 
@@ -59,7 +67,8 @@ class PSMNet(nn.Module):
 
         self.bottom_12 = nn.Sequential(
             nn.Conv2d(in_channels*4, in_channels, kernel_size=3, stride=1, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
-            nn.BatchNorm2d(in_channels),
+            Norm(in_channels),
+            # Norm(group,in_channels),
             nn.ReLU(inplace=True),
         )
 
@@ -67,7 +76,8 @@ class PSMNet(nn.Module):
 
         self.bottom_13 = nn.Sequential(
             nn.Conv2d(in_channels*4, in_channels, kernel_size=3, stride=1, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
-            nn.BatchNorm2d(in_channels),
+            Norm(in_channels),
+            # Norm(group,in_channels),
             nn.ReLU(inplace=True),
         )
 
@@ -75,36 +85,43 @@ class PSMNet(nn.Module):
 
         self.bottom_14 = nn.Sequential(
             nn.Conv2d(in_channels*4, in_channels, kernel_size=3, stride=1, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
-            nn.BatchNorm2d(in_channels),
+            Norm(in_channels),
+            # Norm(group,in_channels),
             nn.ReLU(inplace=True),
         )
 
 
         self.bottom_fuse = nn.Sequential(
             nn.Conv2d(in_channels*8, in_channels*4, kernel_size=3, padding=1),
-            nn.BatchNorm2d(in_channels*4),
+            Norm(in_channels*4),
+            # Norm(group,in_channels*4),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels*4, in_channels*4, kernel_size=1, padding=0),
-            nn.BatchNorm2d(in_channels*4)
+            Norm(in_channels*4)
+            # Norm(group,in_channels*4)
         )
 
 
 
         self.up2 = nn.Sequential(
             nn.Conv2d(in_channels*8, in_channels*4, kernel_size=3, padding=1),
-            nn.BatchNorm2d(in_channels*4),
+            Norm(in_channels*4),
+            # Norm(group,in_channels*4),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels*4, in_channels*2, kernel_size=3, padding=1),
-            nn.BatchNorm2d(in_channels*2),
+            Norm(in_channels*2),
+            # Norm(group,in_channels*2),
             nn.ReLU(inplace=True)
         )
 
         self.up1 = nn.Sequential(
             nn.Conv2d(in_channels*4, in_channels*2, kernel_size=3, padding=1),
-            nn.BatchNorm2d(in_channels*2),
+            Norm(in_channels*2),
+            # Norm(group,in_channels*2),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels*2, in_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(in_channels),
+            Norm(in_channels),
+            # Norm(group,in_channels),
             nn.ReLU(inplace=True)
         )
 
