@@ -139,20 +139,30 @@ def train(imgL,imgR, disp_L):
 
 
         elif args.model == 'concatNet':
-            disp_left, disp_right = model(imgL,imgR)
+            refined_disp_left, refined_disp_right, disp_left,disp_right = model(imgL,imgR)
+
+            print("refined_disp_left.shape=",refined_disp_left.shape)
+            print("disp_left.shape=",disp_left.shape)
+
+
+            if refined_disp_left.ndim == 4:
+                refined_disp_left = torch.squeeze(refined_disp_left,0)
+                refined_disp_right = torch.squeeze(refined_disp_right,0)
+
+            print("refined_disp_left.shape=",refined_disp_left.shape)
 
             
-            gt_loss = F.smooth_l1_loss(disp_left[mask], disp_true[mask], size_average=True)
+            gt_loss = F.smooth_l1_loss(refined_disp_left[mask], disp_true[mask], size_average=True)
 
-            disp_left = torch.unsqueeze(disp_left,0)
-            disp_right = torch.unsqueeze(disp_right,0)
+            refined_disp_left = torch.unsqueeze(refined_disp_left,0)
+            refined_disp_right = torch.unsqueeze(refined_disp_right,0)
             
-            REC_loss,  disp_smooth_loss, lr_loss = criterion(disp_left,disp_right,imgL,imgR)
+            REC_loss,  disp_smooth_loss, lr_loss = criterion(refined_disp_left,refined_disp_right,imgL,imgR)
 
 
             loss =  REC_loss  + lr_loss + gt_loss + disp_smooth_loss
-            # save_image(disp_left/torch.max(disp_left), 'disp_left.png')
-            # save_image(disp_right/torch.max(disp_right), 'disp_right.png')
+            save_image(disp_left/torch.max(disp_left), 'disp_left_tmp.png')
+            save_image(disp_right/torch.max(disp_right), 'disp_right_tmp.png')
         loss.backward()
         optimizer.step()
 
