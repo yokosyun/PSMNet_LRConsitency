@@ -87,7 +87,8 @@ def test(imgL,imgR):
 
         with torch.no_grad():
             start_time = time.time()
-            disp, disp_right= model(imgL,imgR)
+            disp, disp_right, tmp_right,tmp_left= model(imgL,imgR)
+            # disp, disp_right= model(imgL,imgR)
             print('time = %.2f' %(time.time() - start_time))
 
         #save image
@@ -128,6 +129,7 @@ def main():
             imgR = F.pad(imgR,(0,right_pad, top_pad,0)).unsqueeze(0)
 
             # start_time = time.time()
+            # pred_disp , disp_right = test(imgL,imgR)
             pred_disp , disp_right = test(imgL,imgR)
             # print('time = %.2f' %(time.time() - start_time))
 
