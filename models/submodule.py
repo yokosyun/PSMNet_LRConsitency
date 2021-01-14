@@ -44,9 +44,9 @@ def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
 
 
     return nn.Sequential(nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
-                        # Norm(out_planes)
+                        Norm(out_planes)
                         #Norm(groups,out_planes,affine=False)
-                        DomainNorm(channel=out_planes, l2=True)
+                        # DomainNorm(channel=out_planes, l2=True)
 )
 
 

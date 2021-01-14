@@ -132,6 +132,13 @@ class PSMNet(nn.Module):
                                       nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1))
 
 
+        self.refine = nn.Sequential(
+            nn.Conv2d(in_channels/2+1, in_channels/2, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels/2, 1, kernel_size=3, padding=1),
+        )
+
+
     def estimate_disparity(self, cost, height, width):
 
    
@@ -157,15 +164,41 @@ class PSMNet(nn.Module):
         up1 = torch.cat([up1, down1], axis=1)
         up1 = self.up1(up1)
 
-        lr_disp = self.classify(up1)
+        return up1
 
-        lr_disp = F.upsample(lr_disp, [height,width],mode='bilinear')
+
+    # def disparity_regression(self, input, height, width):
+
+    #     lr_disp = self.classify(input)
+
+    #     lr_disp = F.upsample(lr_disp, [height,width],mode='nearest')
+    #     lr_disp = torch.sigmoid(lr_disp)
+    #     lr_disp = lr_disp * self.maxdisp
+    #     left_disp = lr_disp[:,0,:,:]
+    #     right_disp = lr_disp[:,1,:,:]
+
+    #     return left_disp,right_disp
+
+
+    def disparity_regression(self, input, height, width):
+    
+        lr_disp = self.classify(input)
         lr_disp = torch.sigmoid(lr_disp)
         lr_disp = lr_disp * self.maxdisp
         left_disp = lr_disp[:,0,:,:]
         right_disp = lr_disp[:,1,:,:]
 
         return left_disp,right_disp
+
+
+    def refine_disparity(self, disprity,feature_map,height, width):         
+        if disprity.ndim ==3:
+            disprity = torch.unsqueeze(disprity,0)
+        disprity = F.upsample(disprity, [height,width],mode='nearest')
+        feature_map = F.upsample(feature_map, [height,width], mode='nearest')
+        data = torch.cat([disprity, feature_map], axis=1)
+        refined_disparity = self.refine(data)
+        return refined_disparity
 
     def forward(self, left, right):
 
@@ -176,6 +209,14 @@ class PSMNet(nn.Module):
 
         lr_feature = torch.cat([left_feature, right_feature], axis=1)
  
-        pred_left,pred_right = self.estimate_disparity(lr_feature,left.size()[2],left.size()[3])
+        up1 = self.estimate_disparity(lr_feature,left.size()[2],left.size()[3])
 
-        return pred_left,pred_right
+
+        pred_left,pred_right = self.disparity_regression(up1,left.size()[2],left.size()[3])
+
+
+        refined_left_disparity = self.refine_disparity(pred_left,left_feature,left.size()[2],left.size()[3])
+        refined_right_disparity = self.refine_disparity(pred_right,right_feature,left.size()[2],left.size()[3])
+
+        # return pred_left,pred_right
+        return refined_left_disparity,refined_right_disparity,pred_left,pred_right
