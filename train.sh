@@ -1,4 +1,4 @@
-python train.py --maxdisp 192 \
+python train.py --maxdisp 128 \
                --model concatNet \
                --datapath /media/yoko/SSD-PGU3/workspace/datasets/KITTI/data_scene_flow/training/ \
                --epochs 300 \

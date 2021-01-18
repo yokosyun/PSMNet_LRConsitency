@@ -15,6 +15,8 @@ class LRLoss(nn.Module):
     def forward(self, disp_left,disp_right, left, right):
         estRight = self.bilinear_sampler_1d_h(left, disp_right)
         estLeft = self.bilinear_sampler_1d_h(right, -1 * disp_left)
+
+
         gray_left = self.getGrayImage(left)
         gray_right = self.getGrayImage(right)
         gray_estLeft = self.getGrayImage(estLeft)
@@ -28,8 +30,8 @@ class LRLoss(nn.Module):
         save_image(torch.abs(left - estLeft)[:,0,:,:], 'SAD.png')
         save_image( ((left - estLeft)**2 )[:,0,:,:], 'MSE.png')
 
-        SSIM_left = 0.5 * self.SSIM1(gray_left,gray_estLeft,3) + 0.5 * self.SSIM1(gray_left,gray_estLeft,5)
-        SSIM_right = 0.5 * self.SSIM1(gray_right,gray_esttRight,3) + 0.5 * self.SSIM1(gray_right,gray_esttRight,5)
+        SSIM_left = 0.5 * torch.mean(self.SSIM1(gray_left,gray_estLeft,3)) + 0.5 * torch.mean(self.SSIM1(gray_left,gray_estLeft,5))
+        SSIM_right = 0.5 * torch.mean(self.SSIM1(gray_right,gray_esttRight,3)) + 0.5 * torch.mean(self.SSIM1(gray_right,gray_esttRight,5))
 
         alpha = 0.5
         rec_loss_right = alpha * SSIM_right + (1 - alpha) * SAD_right
@@ -53,6 +55,8 @@ class LRLoss(nn.Module):
 
 
         if(True):
+            save_image(LtoR/torch.max(LtoR), 'LtoR.png')
+            save_image(RtoL/torch.max(RtoL), 'RtoL.png')
             save_image(right, 'right.png')
             save_image(left, 'left.png')
             save_image(estRight, 'estRight.png')
@@ -326,7 +330,7 @@ class LRLoss(nn.Module):
         if(True):
             save_image(loss, 'SSIM_GRAY1.png')
 
-        return  torch.mean(loss)
+        return  loss
 
     # TODO! this doesn't work find out reason
     # def SSIM2(self, x, y,window_size=3):

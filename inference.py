@@ -87,9 +87,10 @@ def test(imgL,imgR):
 
         with torch.no_grad():
             start_time = time.time()
-            disp, disp_right, tmp_right,tmp_left= model(imgL,imgR)
+            # disp, disp_right, tmp_right,tmp_left= model(imgL,imgR)
             # disp, disp_right= model(imgL,imgR)
-            print('time = %.2f' %(time.time() - start_time))
+            disp= model(imgL,imgR)
+            print('time = %.4f' %(time.time() - start_time))
 
         #save image
         #save_image(disp/torch.max(disp), 'disp.png')
@@ -97,7 +98,8 @@ def test(imgL,imgR):
         disp = torch.squeeze(disp)
         pred_disp = disp.data.cpu().numpy()
 
-        return pred_disp,disp_right
+        # return pred_disp,disp_right
+        return pred_disp
 
 
 def main():
@@ -130,7 +132,7 @@ def main():
 
             # start_time = time.time()
             # pred_disp , disp_right = test(imgL,imgR)
-            pred_disp , disp_right = test(imgL,imgR)
+            pred_disp = test(imgL,imgR)
             # print('time = %.2f' %(time.time() - start_time))
 
             
